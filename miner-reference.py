@@ -105,28 +105,24 @@ __global__ void mine_keccak(BYTE* const indata, BYTE* outdata, BYTE* const targe
 	const int Idx = threadIdx.x + blockDim.x * blockIdx.x;
 	
 	int i;
-	BYTE random[8];
+	
 	BYTE hash[32]={0};
-	BYTE zeropad[12] = {0};
+	BYTE nonce[32] = {0};
 	BYTE* out = outdata;
 	
 	// build nonce
-	random[0] = 0;
-	random[1] = 0;
-	random[2] = seed[0]>>8;
-	random[3] = seed[0]%256;
-	random[4] = Idx>>16;
-	random[5] = Idx>>8;
-	random[6] = Idx>>4;
-	random[7] = Idx%256;
+	nonce[26] = seed[0]>>8;
+	nonce[27] = seed[0]%256;
+	nonce[28] = Idx>>16;
+	nonce[29] = Idx>>8;
+	nonce[30] = Idx>>4;
+	nonce[31] = Idx%256;
 	
 	//create and execute hash context
     CUDA_KECCAK_CTX ctx;
     cuda_keccak_init(&ctx, 256);
     cuda_keccak_update(&ctx, indata, 32);
-	cuda_keccak_update(&ctx, zeropad, 12);
-	cuda_keccak_update(&ctx, zeropad, 12);
-	cuda_keccak_update(&ctx, random, 8);
+	cuda_keccak_update(&ctx, nonce, 32);
     cuda_keccak_final(&ctx, hash);
 	
 	
@@ -136,17 +132,18 @@ __global__ void mine_keccak(BYTE* const indata, BYTE* outdata, BYTE* const targe
 	}
 	
 	//check if has is lower than nonce fist 8 bytes
+	#pragma unroll 7
 	for(i=0; i<7;i++){
 		if(hash[i]<target[i]){
 			found[0] = 1;
-			out[0] = random[0];
-			out[1] = random[1];
-			out[2] = random[2];
-			out[3] = random[3];
-			out[4] = random[4];
-			out[5] = random[5];
-			out[6] = random[6];
-			out[7] = random[7];
+			out[0] = 0;
+			out[1] = 0;
+			out[2] = nonce[26];
+			out[3] = nonce[27];
+			out[4] = nonce[28];
+			out[5] = nonce[29];
+			out[6] = nonce[30];
+			out[7] = nonce[31];
 			return;
 		}
 		if(hash[i]>target[i]){
@@ -157,7 +154,7 @@ __global__ void mine_keccak(BYTE* const indata, BYTE* outdata, BYTE* const targe
 }
 
 '''
-mod = SourceModule(sha3_file+code)
+mod = SourceModule(sha3_file+code, options=['-O3'])
 
 
 # allocate memory
@@ -175,7 +172,7 @@ found_gpu = cuda.mem_alloc(found.nbytes)
 
 # pycuda function
 func = mod.get_function('mine_keccak')
-
+func.prepare("PPPPP")
 
 #main mining loop
 while True:
@@ -222,14 +219,13 @@ while True:
 		cuda.memcpy_htod(found_gpu, found)
 		
 		# execute kernel on device; type 1D array, size must be tuned for each device type
-		func(a_gpu, b_gpu, target_gpu, seed_gpu, found_gpu, block=(32,1,1), grid=(1024*512,1,1))
+		func.prepared_call((1024*512,1,1), (32,1,1), a_gpu, b_gpu, target_gpu, seed_gpu, found_gpu)
 		
 		# check if device has found asolution
 		cuda.memcpy_dtoh(found, found_gpu)
 		if(found[0] > 0):
 			# copy solution nonce form device and validate it on the cpu
 			cuda.memcpy_dtoh(b, b_gpu)
-			print(f"GPU: {b.data.hex()}")
 			print(f"NONCE: {b.tobytes().hex()}")
 			ctx_proof = sha3.keccak_256()
 			ctx_proof.update(bRoot)
@@ -245,10 +241,9 @@ while True:
 				print (nonce)
 				submit_block(nonce, "0x" + bProof.hex())
 		# slow down the cuda device by waiting between loops 
-		#time.sleep(0.1)
+		#time.sleep(0.5)
 	# reporting kernels*kernelsize/time = hashrate
 	print(f"{round(seed*32*1024*512/(time.time()-start)/1000000, 2)} MH/s  {round(time.time()-start,2)}s/round")
-
 
 
 
