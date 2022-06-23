@@ -204,7 +204,7 @@ def mine():
 		target_bin = int(target, 16).to_bytes(32, byteorder='big')
 		target_arr = numpy.array([target_bin[:8]])
 		
-		print(f"GPU Mining Target: {target_arr.data.hex()}")
+		print(f"GPU Target: {target_arr.data.hex()}")
 		#copy root and target to the device
 		cuda.memcpy_htod(input_gpu, inputBuffer)
 		cuda.memcpy_htod(target_gpu, target_arr)
@@ -243,32 +243,33 @@ def mine():
 				print(f"FoundBlockHash: {bProof.hex()}")
 				# if the solution is valid, submit it
 				if (int.from_bytes(bProof, "big") < int(target, 16)):
-					print("===Valid Block===")
+					print("=Valid Block=")
 					print("Submitting ... ")
 					nonce = int.from_bytes(nonceBuffer.tobytes(), 'big')
 						
 					submit_block(nonce, "0x" + bProof.hex())					
 
 					print("Sleeping for 1s")
+					print("====		====")
 					time.sleep(1)
 					break;
 					
 			# slow down the cuda device by waiting between loops if you are mining too fast
 			#time.sleep(0.9)
 		# reporting kernels*kernelsize/time = hashrate
-		print(f"{round(seed*CUDA_BLOCK_SIZE*CUDA_GRID_SIZE/(time.time()-start)/1000000, 2)} MH/s  in the last {round(time.time()-start,2)}2")
+		print(f"{round(seed*CUDA_BLOCK_SIZE*CUDA_GRID_SIZE/(time.time()-start)/1000000, 2)} MH/s  in the last {round(time.time()-start,2)}s")
 
 
 if __name__ == '__main__':
 
 	print(f"""
-					______________________________
-					||__________________________||
-					||    Siricoin GPU Miner    || 
-					||     	 by krlnokrl        ||
-					||__________________________||
-					|____________________________|
+				______________________________
+				||__________________________||
+				||    Siricoin GPU Miner    || 
+				||     	 by krlnokrl        ||
+				||__________________________||
+				|____________________________|
 						""")
-	print("				Donate to 0x2a5c2fA213b2ba385C0614248B1C705e77480f3A")
+	print("			Donate to 0x2a5c2fA213b2ba385C0614248B1C705e77480f3A")
 	print("")
 	mine()
