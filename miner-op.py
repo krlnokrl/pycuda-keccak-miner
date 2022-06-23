@@ -74,9 +74,7 @@ nodes_notify = ["http://138.197.181.206:5005/", "https://node-1.siricoin.tech:50
 send_url = NodeAddr + "send/rawtransaction/?tx="
 block_url = NodeAddr + "chain/miningInfo"
 
-#global block variables
-target = 0
-last_block = 0
+#global block variabless
 info = requests.get(block_url).json().get("result")
 target = info["target"]
 difficulty = info["difficulty"]
