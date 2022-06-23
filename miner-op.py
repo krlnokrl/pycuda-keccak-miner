@@ -73,7 +73,18 @@ NodeAddr = "http://138.197.181.206:5005/"
 nodes_notify = ["http://138.197.181.206:5005/", "https://node-1.siricoin.tech:5006"]
 send_url = NodeAddr + "send/rawtransaction/?tx="
 block_url = NodeAddr + "chain/miningInfo"
-last_url =  NodeAddr + "/chain/getlastblock"
+
+#global block variables
+target = 0
+last_block = 0
+info = requests.get(block_url).json().get("result")
+target = info["target"]
+difficulty = info["difficulty"]
+lastBlock = info["lastBlockHash"]
+messages = b"null"
+messagesHash = w3.keccak(messages)
+timestamp  = time.time()
+
 
 def mine():
 	with open("keccak.cu", "r") as f:
