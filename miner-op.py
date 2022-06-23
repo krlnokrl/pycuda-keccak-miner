@@ -188,6 +188,15 @@ def mine():
 	gpu_mine = mod.get_function('mine_keccak')
 	gpu_mine.prepare("PPPP")
 	
+	
+	#import global block data
+	global target
+	global difficulty
+	global lastBlock
+	global messages
+	global messagesHash
+	global timestamp
+	
 	#main mining loop
 	while True:
 		#get data
@@ -243,6 +252,7 @@ def mine():
 				print(f"FoundBlockHash: {bProof.hex()}")
 				# if the solution is valid, submit it
 				if (int.from_bytes(bProof, "big") < int(target, 16)):
+					seed = 0
 					print("=Valid Block=")
 					print("Submitting ... ")
 					nonce = int.from_bytes(nonceBuffer.tobytes(), 'big')
