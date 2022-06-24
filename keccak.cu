@@ -6,7 +6,7 @@
  *
  * This file is released into the Public Domain.
  */
-// from Matt Zweil & The Mochimo Core Contributor Team https://github.com/mochimodev/cuda-hashing-algos
+ 
 // Edited & optimized by krlnokrl
  
  
@@ -17,7 +17,7 @@ typedef uint64_t LONG;
 
 #define KECCAK_ROUND 24
 #define KECCAK_STATE_SIZE 25
-#define KECCAK_Q_SIZE 136
+#define KECCAK_Q_SIZE 65
 
 #define DIGESTBITLEN 256
 #define RATE_BITS 1088 	//1600 - (256 << 1)
@@ -40,18 +40,6 @@ typedef struct {
 
 } cuda_keccak_ctx_t;
 typedef cuda_keccak_ctx_t CUDA_KECCAK_CTX;
-
-
-
-//#define cuda_keccak_MIN(a,b) ((a) < (b) ? (a) : (b))
-//#define cuda_keccak_UMIN(a,b) ((a) < (b) ? (a) : (b))
-
-
-__device__ __forceinline__ static int64_t cuda_keccak_MIN(const int64_t a, const int64_t b)
-{
-    if (a > b) return b;
-    return a;
-}
 
 
 __device__ __forceinline__ static uint64_t xor5(const uint64_t a, const uint64_t b, const uint64_t c, const uint64_t d, const uint64_t e)
@@ -86,21 +74,6 @@ __device__ __forceinline__ uint64_t cuda_keccak_ROTL64(const uint64_t x, const i
 }
 */
 
-
-
-__device__ __forceinline__ static void cuda_keccak_extract(cuda_keccak_ctx_t *ctx)
-{
-    //int64_t a;
-    const int s = sizeof(LONG);
-	
-	memcpy(ctx->q, ctx->state, s*17);
-	
-	/* #pragma unroll 4
-    for (int i = 0;i < ABSORB_ROUND;i++) {
-        a = cuda_keccak_leuint64((int64_t*)&ctx->state[i]);
-        memcpy(ctx->q + (i * s), &a, s);
-    } */
-} 
 
 
 __device__ __forceinline__ static void cuda_keccak_permutations(cuda_keccak_ctx_t * ctx)
@@ -249,27 +222,13 @@ __device__ __forceinline__ static void cuda_keccak_permutations(cuda_keccak_ctx_
 }
 
 
-__device__ __forceinline__ static void cuda_keccak_absorb(cuda_keccak_ctx_t *ctx, BYTE* const in)
-{
-    WORD offset = 0;
-	
-	#pragma unroll 4
-    for (WORD i = 0; i < ABSORB_ROUND; ++i) {
-        ctx->state[i] ^= *(in + offset);
-        offset += 8;
-    }
-
-    cuda_keccak_permutations(ctx);
-}
 
 __device__ __forceinline__ void cuda_keccak_pad(cuda_keccak_ctx_t *ctx)
 {
     ctx->q[ctx->bits_in_queue >> 3] |= (1L << (ctx->bits_in_queue & 7));
 
-    if (++(ctx->bits_in_queue) == RATE_BITS) {
-        cuda_keccak_absorb(ctx, ctx->q);
-        ctx->bits_in_queue = 0;
-    }
+    ++(ctx->bits_in_queue);
+
 
     LONG full = ctx->bits_in_queue >> 6;
     LONG partial = ctx->bits_in_queue & 63;
@@ -290,67 +249,30 @@ __device__ __forceinline__ void cuda_keccak_pad(cuda_keccak_ctx_t *ctx)
     ctx->state[(RATE_BITS - 1) >> 6] ^= 9223372036854775808ULL;/* 1 << 63 */
 
     cuda_keccak_permutations(ctx);
-    cuda_keccak_extract(ctx);
 
     ctx->bits_in_queue = RATE_BITS;
 }
 
-/*
- * Digestbitlen must be 128 224 256 288 384 512
- */
-__device__ void cuda_keccak_init(cuda_keccak_ctx_t *ctx)
+
+__device__ __forceinline__ void cuda_keccak_init(cuda_keccak_ctx_t *ctx)
 {
     memset(ctx, 0, sizeof(cuda_keccak_ctx_t));
-	
+
     ctx->bits_in_queue = 0;
 }
 
-
-__device__ void cuda_keccak_update(cuda_keccak_ctx_t *ctx, BYTE* const in, const LONG inlen)
-{
-    int64_t BYTEs = ctx->bits_in_queue >> 3;
-    int64_t count = 0;
-	int64_t partial = 0;
-    while (count < inlen) {
-        if (BYTEs == 0 && count <= ((int64_t)(inlen - RATE_BYTES))) {
-            do {
-                cuda_keccak_absorb(ctx, in + count);
-                count += RATE_BYTES;
-            } while (count <= ((int64_t)(inlen - RATE_BYTES)));
-        } else {
-            partial = cuda_keccak_MIN(RATE_BYTES - BYTEs, inlen - count);
-            memcpy(ctx->q + BYTEs, in + count, partial);
-
-            BYTEs += partial;
-            count += partial;
-
-            if (BYTEs == RATE_BYTES) {
-                cuda_keccak_absorb(ctx, ctx->q);
-                BYTEs = 0;
-            }
-        }
-    }
-    ctx->bits_in_queue = BYTEs << 3;
+__device__ __forceinline__ void cuda_keccak_update(cuda_keccak_ctx_t *ctx, BYTE* const in, const WORD inlen){
+	int64_t BYTEs = ctx->bits_in_queue >> 3;
+	memcpy(ctx->q + BYTEs, in, inlen);
+	BYTEs += inlen;
+	ctx->bits_in_queue = BYTEs << 3;
 }
+
 
 __device__ __forceinline__ void cuda_keccak_final(cuda_keccak_ctx_t *ctx, BYTE *out)
 {
-
     cuda_keccak_pad(ctx);
     WORD i = 0;
+    memcpy(out, ctx->state , 8);
 
-    while (i < DIGESTBITLEN ) {
-        if (ctx->bits_in_queue == 0) {
-            cuda_keccak_permutations(ctx);
-            cuda_keccak_extract(ctx);
-            ctx->bits_in_queue = RATE_BITS;
-        }
-
-        LONG partial_block = cuda_keccak_MIN(ctx->bits_in_queue, DIGESTBITLEN - i);
-		
-		//copy only the first 8 bytes
-        memcpy(out + (i >> 3), ctx->q + (RATE_BYTES - (ctx->bits_in_queue >> 3)), partial_block >> 3 >> 2);
-        ctx->bits_in_queue -= partial_block;
-        i += partial_block;
-    }
 }

@@ -109,7 +109,7 @@ def mine():
 		cuda_keccak_update(&ctx, zero, 24);
 	}
 
-	__global__ void mine_keccak(BYTE* outdata, BYTE* const target, const uint16_t seed, uint16_t* found)
+	__global__ void mine_keccak(BYTE* outdata, BYTE* const target, const uint16_t seed, uint8_t* found)
 	{
 		//Thread id as seed
 		const uint32_t Idx = threadIdx.x + blockDim.x * blockIdx.x;
@@ -174,7 +174,7 @@ def mine():
 	inputBuffer = numpy.frombuffer(b'a'*32)
 	nonceBuffer = numpy.array(b'a'*8)
 	found = numpy.array([0])
-	found.astype(numpy.uint32)
+	found.astype(numpy.uint8)
 
 	input_gpu = cuda.mem_alloc(inputBuffer.nbytes)
 	nonce_gpu = cuda.mem_alloc(nonceBuffer.nbytes)
