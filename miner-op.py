@@ -8,7 +8,7 @@
 # GTX1070 - 250MH/s
 # RTX2080Ti - 360MH/s
 
-from colorama import Fore, Back, Style
+from colorama import init, Back, Style
 import time, json, sha3,random
 from web3.auto import w3
 from eth_account.account import Account
@@ -20,6 +20,7 @@ import pycuda.driver as cuda
 from pycuda.compiler import SourceModule
 import numpy
 
+init(convert=True)
 rewardsRecipient = '0x6B7Be45A25BFA59c11F653062288FaE89643e06A'
 
 
@@ -282,6 +283,7 @@ if __name__ == '__main__':
 ██║░╚═╝░██║██║██║░╚███║███████╗██║░░██║
 ╚═╝░░░░░╚═╝╚═╝╚═╝░░╚══╝╚══════╝╚═╝░░╚═╝ By krlnokrl (yoyois) and UpgradeDenied (discoflea)
 ''')
+
 	print(Back.MAGENTA + " INFO " + Style.RESET_ALL + " Mining to " + rewardsRecipient)
 	print(Back.GREEN + " MINER " + Style.RESET_ALL + " Miner started on GPU...")
 	mine()
