@@ -6,7 +6,9 @@
 
 # Benchmark:	
 # GTX1070 - 250MH/s
+# RTX2080Ti - 360MH/s
 
+from colorama import Fore, Back, Style
 import time, json, sha3,random
 from web3.auto import w3
 from eth_account.account import Account
@@ -18,8 +20,7 @@ import pycuda.driver as cuda
 from pycuda.compiler import SourceModule
 import numpy
 
-
-rewardsRecipient = '0x2a5c2fA213b2ba385C0614248B1C705e77480f3A'
+rewardsRecipient = '0x6B7Be45A25BFA59c11F653062288FaE89643e06A'
 
 
 # helper functions
@@ -62,7 +63,7 @@ def submit_block(nonce, proof):
 		
 	if (tmp_get.status_code != 500 ):
 		txid = tmp_get.json().get("result")[0]
-	print(f"Block accepted in tx: {txid}")
+	print(Back.GREEN + " MINER " + Style.RESET_ALL + " Block submitted!")
 
 # best settings for GTX 1070 at 256 Threads/block - vhigh grid
 CUDA_BLOCK_SIZE = 256	# should be fine in most cases
@@ -109,7 +110,7 @@ def mine():
 		cuda_keccak_update(&ctx, zero, 24);
 	}
 
-	__global__ void mine_keccak(BYTE* outdata, BYTE* const target, const uint16_t seed, uint8_t* found)
+	__global__ void mine_keccak(BYTE* outdata, BYTE* const target, const uint16_t seed, uint16_t* found)
 	{
 		//Thread id as seed
 		const uint32_t Idx = threadIdx.x + blockDim.x * blockIdx.x;
@@ -174,7 +175,7 @@ def mine():
 	inputBuffer = numpy.frombuffer(b'a'*32)
 	nonceBuffer = numpy.array(b'a'*8)
 	found = numpy.array([0])
-	found.astype(numpy.uint8)
+	found.astype(numpy.uint32)
 
 	input_gpu = cuda.mem_alloc(inputBuffer.nbytes)
 	nonce_gpu = cuda.mem_alloc(nonceBuffer.nbytes)
@@ -213,7 +214,6 @@ def mine():
 		target_bin = int(target, 16).to_bytes(32, byteorder='big')
 		target_arr = numpy.array([target_bin[:8]])
 		
-		print(f"GPU Target: {target_arr.data.hex()}")
 		#copy root and target to the device
 		cuda.memcpy_htod(input_gpu, inputBuffer)
 		cuda.memcpy_htod(target_gpu, target_arr)
@@ -248,38 +248,40 @@ def mine():
 				ctx_proof.update((0).to_bytes(24, byteorder='big'))
 				ctx_proof.update(nonceBuffer.tobytes())
 				bProof = ctx_proof.digest()
-				print("====Solution====")
-				print(f"FoundBlockHash: {bProof.hex()}")
-				# if the solution is valid, submit it
+
 				if (int.from_bytes(bProof, "big") < int(target, 16)):
 					seed = 0
-					print("=Valid Block=")
-					print("Submitting ... ")
 					nonce = int.from_bytes(nonceBuffer.tobytes(), 'big')
 						
 					submit_block(nonce, "0x" + bProof.hex())					
 
-					print("Sleeping for 1s")
-					print("====		====")
 					time.sleep(1)
 					break;
 					
 			# slow down the cuda device by waiting between loops if you are mining too fast
 			#time.sleep(0.9)
 		# reporting kernels*kernelsize/time = hashrate
-		print(f"{round(seed*CUDA_BLOCK_SIZE*CUDA_GRID_SIZE/(time.time()-start)/1000000, 2)} MH/s  in the last {round(time.time()-start,2)}s")
+		print(Back.MAGENTA + " INFO " + Style.RESET_ALL + f" {round(seed*CUDA_BLOCK_SIZE*CUDA_GRID_SIZE/(time.time()-start)/1000000, 2)} MH/s in the last {round(time.time()-start,2)}s")
 
 
 if __name__ == '__main__':
 
-	print(f"""
-				______________________________
-				||__________________________||
-				||    Siricoin GPU Miner    || 
-				||     	 by krlnokrl        ||
-				||__________________________||
-				|____________________________|
-						""")
-	print("			Donate to 0x2a5c2fA213b2ba385C0614248B1C705e77480f3A")
-	print("")
+	print('''
+
+░██████╗██╗██████╗░██╗░█████╗░░█████╗░██╗███╗░░██╗  ░██████╗░██████╗░██╗░░░██╗
+██╔════╝██║██╔══██╗██║██╔══██╗██╔══██╗██║████╗░██║  ██╔════╝░██╔══██╗██║░░░██║
+╚█████╗░██║██████╔╝██║██║░░╚═╝██║░░██║██║██╔██╗██║  ██║░░██╗░██████╔╝██║░░░██║
+░╚═══██╗██║██╔══██╗██║██║░░██╗██║░░██║██║██║╚████║  ██║░░╚██╗██╔═══╝░██║░░░██║
+██████╔╝██║██║░░██║██║╚█████╔╝╚█████╔╝██║██║░╚███║  ╚██████╔╝██║░░░░░╚██████╔╝
+╚═════╝░╚═╝╚═╝░░╚═╝╚═╝░╚════╝░░╚════╝░╚═╝╚═╝░░╚══╝  ░╚═════╝░╚═╝░░░░░░╚═════╝░
+
+███╗░░░███╗██╗███╗░░██╗███████╗██████╗░
+████╗░████║██║████╗░██║██╔════╝██╔══██╗
+██╔████╔██║██║██╔██╗██║█████╗░░██████╔╝
+██║╚██╔╝██║██║██║╚████║██╔══╝░░██╔══██╗
+██║░╚═╝░██║██║██║░╚███║███████╗██║░░██║
+╚═╝░░░░░╚═╝╚═╝╚═╝░░╚══╝╚══════╝╚═╝░░╚═╝ By krlnokrl (yoyois) and UpgradeDenied (discoflea)
+''')
+	print(Back.MAGENTA + " INFO " + Style.RESET_ALL + " Mining to " + rewardsRecipient)
+	print(Back.GREEN + " MINER " + Style.RESET_ALL + " Miner started on GPU...")
 	mine()
