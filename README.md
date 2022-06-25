@@ -6,12 +6,12 @@
 
 ## Installation
  1: Install Visual Studio (2022|2019|2016) with C++ Desktop Development package<br>
- 2: Ensure x64 MSVC is in your PATH (i used C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.32.31326\bin\Hostx64\x64)
- 3: Install CUDA Toolkit (https://developer.nvidia.com/cuda-downloads) with Express Settings
- 4: Install Python 3.x
- 5: Install Python Dependencies with pip (py -m pip install -r requirments.txt on windows, may vary between operation systems)
- 6: Edit miner-op and change rewardsRecipient = "0x..." (Line 8) to use your wallet adress
- 7: Run miner-op.py
+ 2: Ensure x64 MSVC is in your PATH (i used C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.32.31326\bin\Hostx64\x64)<br>
+ 3: Install CUDA Toolkit (https://developer.nvidia.com/cuda-downloads) with Express Settings<br>
+ 4: Install Python 3.x<br>
+ 5: Install Python Dependencies with pip (py -m pip install -r requirments.txt on windows, may vary between operation systems)<br>
+ 6: Edit miner-op and change rewardsRecipient = "0x..." (Line 8) to use your wallet adress<br>
+ 7: Run miner-op.py<br>
 
 ## Benchmark
  I'm Collecting various CPU/GPU benchmarks, contact me on discord if you would like to submit your GPU/Hashrate/Additional Settings (discoflea#3083)
