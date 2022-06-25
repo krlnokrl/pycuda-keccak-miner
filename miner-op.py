@@ -4,9 +4,8 @@
 # Donate to 0x2a5c2fA213b2ba385C0614248B1C705e77480f3A
 # siri / eth / matic / etc.
 
-# Benchmark:	
-# GTX1070 - 250MH/s
-# RTX2080Ti - 360MH/s
+# paste your miner adress here
+rewardsRecipient = '0x6B7Be45A25BFA59c11F653062288FaE89643e06A'
 
 from colorama import init, Back, Style
 import time, json, sha3,random
@@ -21,8 +20,6 @@ from pycuda.compiler import SourceModule
 import numpy
 
 init(convert=True)
-rewardsRecipient = '0x6B7Be45A25BFA59c11F653062288FaE89643e06A'
-
 
 # helper functions
 def refreshAccountInfo(acc):
@@ -64,10 +61,10 @@ def submit_block(nonce, proof):
 		
 	if (tmp_get.status_code != 500 ):
 		txid = tmp_get.json().get("result")[0]
-	print(Back.GREEN + " MINER " + Style.RESET_ALL + " Block submitted!")
+	print(Back.GREEN + " GOOD " + Style.RESET_ALL + " Block found! " + Style.RESET_ALL + Style.DIM + "TXID: " + txid)
 
 # best settings for GTX 1070 at 256 Threads/block - vhigh grid
-CUDA_BLOCK_SIZE = 256	# should be fine in most cases
+CUDA_BLOCK_SIZE = 512	# should be fine in most cases
 CUDA_GRID_SIZE = 2**22 # 2**19 for weaker gpu and up to 2**24
 
 #node values
@@ -262,7 +259,7 @@ def mine():
 			# slow down the cuda device by waiting between loops if you are mining too fast
 			#time.sleep(0.9)
 		# reporting kernels*kernelsize/time = hashrate
-		print(Back.MAGENTA + " INFO " + Style.RESET_ALL + f" {round(seed*CUDA_BLOCK_SIZE*CUDA_GRID_SIZE/(time.time()-start)/1000000, 2)} MH/s in the last {round(time.time()-start,2)}s")
+		print(Back.MAGENTA + " INFO " + Style.RESET_ALL + f" {round(seed*CUDA_BLOCK_SIZE*CUDA_GRID_SIZE/(time.time()-start)/1000000, 2)} MH/s in the last {round(time.time()-start,2)}s" + Style.DIM + "")
 
 
 if __name__ == '__main__':
@@ -284,6 +281,6 @@ if __name__ == '__main__':
 ╚═╝░░░░░╚═╝╚═╝╚═╝░░╚══╝╚══════╝╚═╝░░╚═╝ By krlnokrl (yoyois) and UpgradeDenied (discoflea)
 ''')
 
-	print(Back.MAGENTA + " INFO " + Style.RESET_ALL + " Mining to " + rewardsRecipient)
-	print(Back.GREEN + " MINER " + Style.RESET_ALL + " Miner started on GPU...")
+	print(Back.CYAN + " INIT " + Style.RESET_ALL + " Mining to " + rewardsRecipient)
+	print(Back.CYAN + " INIT " + Style.RESET_ALL + " Miner started on GPU 0 (" + cuda.Device(0).name() + ")")
 	mine()

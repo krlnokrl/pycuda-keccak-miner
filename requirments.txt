@@ -1,0 +1,6 @@
+colorama
+pysha3
+web3
+requests
+pycuda
+numpy
