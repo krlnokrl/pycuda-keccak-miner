@@ -5,7 +5,7 @@
  This is a specific optimisation to siricoin, removing all unnecessary functionality but for mining. Overall a >+200% speedup
 
 ## Installation
- 1: Install Visual Studio (2022|2019|2016) with C++ Desktop Development package
+ 1: Install Visual Studio (2022|2019|2016) with C++ Desktop Development package<br>
  2: Ensure x64 MSVC is in your PATH (i used C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.32.31326\bin\Hostx64\x64)
  3: Install CUDA Toolkit (https://developer.nvidia.com/cuda-downloads) with Express Settings
  4: Install Python 3.x
