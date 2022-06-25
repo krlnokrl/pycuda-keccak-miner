@@ -5,7 +5,9 @@
 # siri / eth / matic / etc.
 
 # Benchmark:	
-# GTX1070 - 250MH/s
+# GTX 1070   - 440MH/s
+# GTX 1050Ti - 200MH/s
+# RTX 2080Ti - 980MH/s
 
 import time, json, sha3,random
 from web3.auto import w3
@@ -18,8 +20,31 @@ import pycuda.driver as cuda
 from pycuda.compiler import SourceModule
 import numpy
 
-
+# mine to this address
 rewardsRecipient = '0x2a5c2fA213b2ba385C0614248B1C705e77480f3A'
+
+# best settings for GTX 1070 at 256 Threads/block - vhigh grid
+# == TUNE THIS FOR YOUR SPECIFIC GPU ==
+# Different values work bestf for different systems
+CUDA_BLOCK_SIZE = 256	# accepted values: 32 64 128 256 512 1024 | lower for weaker systems
+CUDA_GRID_SIZE = 2**23 	# 2**18 2**19 2**20 ... 2**24 | lower for weaker gpu
+
+#node values
+NodeAddr = "http://138.197.181.206:5005/"
+# nodes to notify when block is found
+nodes_notify = ["http://138.197.181.206:5005/", "https://node-1.siricoin.tech:5006/"]
+
+send_url = NodeAddr + "send/rawtransaction/?tx="
+block_url = NodeAddr + "chain/miningInfo"
+
+#global block variabless
+info = requests.get(block_url).json().get("result")
+target = info["target"]
+difficulty = info["difficulty"]
+lastBlock = info["lastBlockHash"]
+messages = b"null"
+messagesHash = w3.keccak(messages)
+timestamp  = time.time()
 
 
 # helper functions
@@ -63,25 +88,6 @@ def submit_block(nonce, proof):
 	if (tmp_get.status_code != 500 ):
 		txid = tmp_get.json().get("result")[0]
 	print(f"Block accepted in tx: {txid}")
-
-# best settings for GTX 1070 at 256 Threads/block - vhigh grid
-CUDA_BLOCK_SIZE = 256	# should be fine in most cases
-CUDA_GRID_SIZE = 2**22 # 2**19 for weaker gpu and up to 2**24
-
-#node values
-NodeAddr = "http://138.197.181.206:5005/"
-nodes_notify = ["http://138.197.181.206:5005/", "https://node-1.siricoin.tech:5006"]
-send_url = NodeAddr + "send/rawtransaction/?tx="
-block_url = NodeAddr + "chain/miningInfo"
-
-#global block variabless
-info = requests.get(block_url).json().get("result")
-target = info["target"]
-difficulty = info["difficulty"]
-lastBlock = info["lastBlockHash"]
-messages = b"null"
-messagesHash = w3.keccak(messages)
-timestamp  = time.time()
 
 
 def mine():
@@ -280,6 +286,5 @@ if __name__ == '__main__':
 				||__________________________||
 				|____________________________|
 						""")
-	print("			Donate to 0x2a5c2fA213b2ba385C0614248B1C705e77480f3A")
 	print("")
 	mine()
