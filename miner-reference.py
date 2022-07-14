@@ -57,8 +57,8 @@ def submit_block(nonce, proof):
 
 
 
-NodeAddr = "http://138.197.181.206:5005/"
-nodes_notify = ["http://138.197.181.206:5005/", "https://node-1.siricoin.tech:5006"]
+NodeAddr = "https://node-1.siricoin.tech:5006/"
+nodes_notify = ["https://node-1.siricoin.tech:5006/"]
 
 
 #NodeAddr = "http://127.0.0.1:5005/"
