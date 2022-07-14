@@ -30,9 +30,9 @@ CUDA_BLOCK_SIZE = 256	# accepted values: 32 64 128 256 512 1024 | lower for weak
 CUDA_GRID_SIZE = 2**23 	# 2**18 2**19 2**20 ... 2**24 | lower for weaker gpu
 
 #node values
-NodeAddr = "http://138.197.181.206:5005/"
+NodeAddr = "https://node-1.siricoin.tech:5006/"
 # nodes to notify when block is found
-nodes_notify = ["http://138.197.181.206:5005/", "https://node-1.siricoin.tech:5006/"]
+nodes_notify = ["https://node-1.siricoin.tech:5006/"]
 
 send_url = NodeAddr + "send/rawtransaction/?tx="
 block_url = NodeAddr + "chain/miningInfo"
